@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CosmoSure Agent V2</title>
+    <meta name="description" content="CosmoSure Agent V2 — autonomous AI skincare agent with multi-step reasoning.">
+    <link rel="stylesheet" href="index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- ── API Key Modal ── -->
+    <div id="settingsOverlay" class="overlay" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-icon">✦</div>
+            <h1>CosmoSure Agent V2</h1>
+            <p class="modal-sub">Enter your Gemini API key to activate the agent.</p>
+            <div class="field-group">
+                <label for="apiKeyInput">Gemini API Key</label>
+                <input type="password" id="apiKeyInput" placeholder="AIza...">
+            </div>
+            <button id="saveApiKey" class="btn-primary">Activate Agent</button>
+            <p class="modal-hint">🔒 Stored locally in your browser. Never sent to any server.</p>
+        </div>
+    </div>
+
+    <!-- ── App Shell ── -->
+    <div id="appContainer" class="app-shell">
+
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar">
+
+            <!-- Brand -->
+            <div class="sidebar-brand">
+                <span class="brand-icon">✦</span>
+                <div>
+                    <div class="brand-name">CosmoSure</div>
+                    <div class="brand-tag">Agent V2</div>
+                </div>
+            </div>
+
+            <!-- Query input -->
+            <div class="sidebar-section">
+                <label class="field-label">Ask the Agent</label>
+                <textarea
+                    id="agentPromptInput"
+                    placeholder="e.g., Find me a serum for dullness, check its key ingredient, and tell me the price..."
+                    rows="6"
+                ></textarea>
+                <button id="runAgentBtn" class="btn-primary full-w mt-12">
+                    <span id="btnLabel">Dispatch Agent ✦</span>
+                </button>
+                <button id="clearBtn" class="btn-ghost full-w mt-8">Clear</button>
+            </div>
+
+            <!-- Tools -->
+            <div class="sidebar-section">
+                <label class="field-label">Available Tools</label>
+                <div class="tool-card" id="tool-search">
+                    <div class="tool-emoji">🔍</div>
+                    <div class="tool-info">
+                        <div class="tool-name">searchProductDatabase</div>
+                        <div class="tool-desc">Find products by concern or ingredient</div>
+                    </div>
+                </div>
+                <div class="tool-card" id="tool-ingredient">
+                    <div class="tool-emoji">🧪</div>
+                    <div class="tool-info">
+                        <div class="tool-name">getIngredientAnalysis</div>
+                        <div class="tool-desc">Scientific breakdown of any ingredient</div>
+                    </div>
+                </div>
+                <div class="tool-card" id="tool-price">
+                    <div class="tool-emoji">💲</div>
+                    <div class="tool-info">
+                        <div class="tool-name">checkRetailPricing</div>
+                        <div class="tool-desc">Live price &amp; retailer lookup</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- How it works -->
+            <div class="sidebar-section">
+                <label class="field-label">Agentic Loop</label>
+                <div class="loop-flow">
+                    <span class="flow-pill">Query</span>
+                    <span class="flow-arrow">→</span>
+                    <span class="flow-pill">LLM</span>
+                    <span class="flow-arrow">→</span>
+                    <span class="flow-pill">Tool</span>
+                    <span class="flow-arrow">→</span>
+                    <span class="flow-pill highlight">Answer</span>
+                </div>
+                <p class="loop-note">All past interactions are included in every LLM call.</p>
+            </div>
+
+            <div class="sidebar-footer">
+                <button id="settingsBtn" class="btn-ghost full-w">⚙ Change API Key</button>
+            </div>
+        </aside>
+
+        <!-- MAIN AREA -->
+        <main class="main-area">
+
+            <!-- Top bar -->
+            <div class="topbar">
+                <h2 class="topbar-title">Reasoning Chain</h2>
+                <div id="iterationBadge" class="status-badge"></div>
+            </div>
+
+            <!-- Scrollable content -->
+            <div class="content-scroll">
+
+                <!-- Empty state -->
+                <div id="initialState" class="empty-state">
+                    <div class="empty-icon">✦</div>
+                    <h2>Autonomous Skincare Agent</h2>
+                    <p>Ask a question and watch the agent reason through it — step by step — using real tools.</p>
+                    <div class="chips-label">Try asking...</div>
+                    <div class="chips">
+                        <button class="chip" data-query="Find me a cheap serum for dullness, analyze vitamin C, and check the price.">Vitamin C serum for dullness + price</button>
+                        <button class="chip" data-query="Recommend a moisturizer for dry skin with ceramides and check how much it costs.">Ceramide moisturizer for dry skin</button>
+                        <button class="chip" data-query="I have acne and oiliness. Find a product, analyze its key ingredient, and check the price.">Acne &amp; oiliness solution</button>
+                    </div>
+                </div>
+
+                <!-- Agent output -->
+                <div id="agentUI" style="display:none;">
+                    <div id="reasoningChain" class="chain"></div>
+
+                    <div id="finalResultContainer" class="answer-card" style="display:none;">
+                        <div class="answer-header">
+                            <span class="answer-icon">✦</span>
+                            <span class="answer-title">Final Answer</span>
+                        </div>
+                        <div id="finalResult" class="answer-body markdown-body"></div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module" src="index.js"></script>
+</body>
+</html>
