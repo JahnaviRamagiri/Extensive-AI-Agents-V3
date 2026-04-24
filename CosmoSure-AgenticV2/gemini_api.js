@@ -1,4 +1,4 @@
-import { TOOL_DESCRIPTIONS, toolFunctions } from './agent_tools.js';
+import { TOOL_DESCRIPTIONS, createToolFunctions } from './agent_tools.js';
 
 /**
  * CosmoSure Agentic Gemini API
@@ -17,7 +17,7 @@ const GEMINI_MODEL = "gemini-3.1-flash-lite-preview";
 
 // ─── System Prompt ────────────────────────────────────────────────────────────
 // This turns the LLM into an agent — mirrors the system_prompt in 10_full_agent.py
-const SYSTEM_PROMPT = `You are CosmoSure, an elite autonomous AI skincare agent. Your job is to answer the user's query accurately by reasoning step-by-step and using your tools.
+const SYSTEM_PROMPT = `You are CosmoSure Agent V3, an elite autonomous AI skincare agent. Your job is to answer the user's query accurately by reasoning step-by-step and using your tools.
 
 You have access to the following tools:
 ${TOOL_DESCRIPTIONS}
@@ -32,15 +32,18 @@ If you have gathered enough information and are ready to give the final answer:
 
 IMPORTANT RULES:
 - Respond with ONLY the JSON. No other text. No markdown code fences.
-- ALWAYS use tools to look up real data before answering — do not guess product names, prices, or ingredient effects.
+- ALWAYS use tools to gather real data before answering — searchWeb first, then analyze ingredient, then check price.
 - After receiving a tool result, either call another tool (if more info is needed) or provide your final answer.
-- Your final answer should be beautifully formatted in Markdown with sections, bullet points, and clear recommendations.
-- Each student query deserves a thorough multi-step approach: search → analyze → price check → conclude.`;
+- Your final answer should be a comprehensive, professionally formatted report.
+- Use Markdown features: # for Main Titles, ## for Sections, **bold** for emphasis, *italics* for tips, and bullet points for lists.
+- Ideal flow: searchWeb → getIngredientAnalysis → checkRetailPricing → final answer.`;
 
 export class AgenticGeminiAPI {
     constructor(apiKey) {
         this.apiKey = apiKey;
         this.baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+        // Create tool functions with API key so they can make Gemini sub-calls
+        this.toolFunctions = createToolFunctions(apiKey);
     }
 
     /**
@@ -181,14 +184,14 @@ export class AgenticGeminiAPI {
 
                 // Execute the tool locally
                 let toolResult;
-                if (toolFunctions[toolName]) {
+                if (this.toolFunctions[toolName]) {
                     try {
-                        toolResult = toolFunctions[toolName](toolArgs);
+                        toolResult = await this.toolFunctions[toolName](toolArgs);
                     } catch (toolErr) {
                         toolResult = { error: `Tool execution failed: ${toolErr.message}` };
                     }
                 } else {
-                    toolResult = { error: `Unknown tool: "${toolName}". Available tools: ${Object.keys(toolFunctions).join(", ")}` };
+                    toolResult = { error: `Unknown tool: "${toolName}". Available tools: ${Object.keys(this.toolFunctions).join(", ")}` };
                 }
 
                 onProgress({ type: "tool_result", iteration, name: toolName, result: toolResult });

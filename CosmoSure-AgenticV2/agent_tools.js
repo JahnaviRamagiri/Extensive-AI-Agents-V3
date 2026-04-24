@@ -1,210 +1,127 @@
 /**
- * CosmoSure Agent Tools
- * These are the 3 custom tool functions the agent can call.
- * The agent uses a manual JSON protocol (no native function calling).
+ * CosmoSure Agent V3 — Tool Functions (Gemini-only, zero mock data)
+ *
+ * All three tools make focused Gemini sub-calls with specific prompts.
+ * No hardcoded data. No external APIs. Only the user's Gemini API key.
+ *
+ * 1. searchWeb(query)              → Gemini reasons about products/brands on the web
+ * 2. getIngredientAnalysis(name)   → Gemini provides science-backed ingredient breakdown
+ * 3. checkRetailPricing(product)   → Gemini reasons about price ranges & retailers
  */
 
-// Tool descriptions injected into the system prompt so the LLM knows what to call
 export const TOOL_DESCRIPTIONS = `
-1. searchProductDatabase(query: string) -> object
-   Searches the CosmoSure internal skincare product database.
-   Use this to find products matching a concern, ingredient, or category.
-   Examples: searchProductDatabase("vitamin c serum"), searchProductDatabase("moisturizer dry skin")
+1. searchWeb(query: string) -> object
+   Searches for real skincare products, brands, or topics matching the query.
+   Returns product names, descriptions, and relevant details.
+   Examples: searchWeb("best vitamin C serum for dullness"), searchWeb("affordable moisturizer for dry skin")
 
 2. getIngredientAnalysis(ingredientName: string) -> object
    Returns a detailed scientific breakdown of a skincare ingredient:
-   benefits, concerns it targets, and any warnings.
-   Examples: getIngredientAnalysis("Niacinamide"), getIngredientAnalysis("Hyaluronic Acid")
+   type, benefits, target concerns, usage instructions, and cautions.
+   Examples: getIngredientAnalysis("Niacinamide"), getIngredientAnalysis("Retinol")
 
 3. checkRetailPricing(productName: string) -> object
-   Looks up the current lowest retail price and official retailer for a product.
-   Examples: checkRetailPricing("CeraVe Hydrating Facial Cleanser")
+   Returns the approximate price range and major retailers for a skincare product.
+   Examples: checkRetailPricing("The Ordinary Niacinamide 10%"), checkRetailPricing("CeraVe Moisturizing Cream")
 `;
 
-// ─── Mock Product Database ───────────────────────────────────────────────────
-const mockProducts = [
-    {
-        name: "CeraVe Hydrating Facial Cleanser",
-        type: "cleanser",
-        brand: "CeraVe",
-        tags: ["dryness", "ceramides", "hyaluronic acid", "gentle", "sensitive skin"],
-        rating: 4.7,
-        keyIngredients: ["Ceramides", "Hyaluronic Acid", "Niacinamide"]
-    },
-    {
-        name: "Paula's Choice 2% BHA Liquid Exfoliant",
-        type: "exfoliant",
-        brand: "Paula's Choice",
-        tags: ["acne", "salicylic acid", "bha", "dullness", "blackheads", "pores"],
-        rating: 4.8,
-        keyIngredients: ["Salicylic Acid (2%)"]
-    },
-    {
-        name: "The Ordinary Niacinamide 10% + Zinc 1%",
-        type: "serum",
-        brand: "The Ordinary",
-        tags: ["acne", "niacinamide", "oiliness", "pores", "redness", "blemishes"],
-        rating: 4.5,
-        keyIngredients: ["Niacinamide", "Zinc PCA"]
-    },
-    {
-        name: "La Roche-Posay Toleriane Double Repair Face Moisturizer",
-        type: "moisturizer",
-        brand: "La Roche-Posay",
-        tags: ["dryness", "ceramides", "niacinamide", "sensitive skin", "repair"],
-        rating: 4.6,
-        keyIngredients: ["Ceramides", "Niacinamide", "Glycerin"]
-    },
-    {
-        name: "TruSkin Vitamin C Serum",
-        type: "serum",
-        brand: "TruSkin",
-        tags: ["dullness", "vitamin c", "aging", "brightening", "dark spots", "glow"],
-        rating: 4.4,
-        keyIngredients: ["Vitamin C (L-Ascorbic Acid)", "Hyaluronic Acid", "Vitamin E"]
-    },
-    {
-        name: "Neutrogena Hydro Boost Water Gel",
-        type: "moisturizer",
-        brand: "Neutrogena",
-        tags: ["hydration", "hyaluronic acid", "oily skin", "lightweight", "gel"],
-        rating: 4.5,
-        keyIngredients: ["Hyaluronic Acid"]
-    },
-    {
-        name: "Cetaphil Gentle Skin Cleanser",
-        type: "cleanser",
-        brand: "Cetaphil",
-        tags: ["sensitive skin", "gentle", "dryness", "fragrance-free", "dermatologist recommended"],
-        rating: 4.6,
-        keyIngredients: ["Glycerin", "Niacinamide"]
-    },
-    {
-        name: "Drunk Elephant C-Firma Fresh Day Serum",
-        type: "serum",
-        brand: "Drunk Elephant",
-        tags: ["vitamin c", "brightening", "aging", "antioxidant", "luxury", "dullness"],
-        rating: 4.3,
-        keyIngredients: ["Vitamin C (15%)", "Ferulic Acid", "Vitamin E"]
-    }
-];
+// ─── Tool Factory ─────────────────────────────────────────────────────────────
+export function createToolFunctions(apiKey) {
+    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`;
 
-// ─── Mock Ingredient Database ─────────────────────────────────────────────────
-const mockIngredients = {
-    "hyaluronic acid": {
-        type: "Humectant",
-        benefits: "A powerful humectant that attracts and holds up to 1000x its weight in water. Plumps skin, reduces fine lines, and improves texture.",
-        bestFor: ["Dryness", "Dehydration", "Fine Lines"],
-        cautions: "Works best in humid environments; in dry climates, seal with an occlusive moisturizer.",
-        frequency: "Can be used AM and PM daily."
-    },
-    "niacinamide": {
-        type: "Vitamin B3 / Multi-functional",
-        benefits: "Regulates sebum production, visibly minimizes pores, reduces redness and inflammation, and strengthens the skin barrier. Also brightens dark spots.",
-        bestFor: ["Acne", "Oiliness", "Redness", "Enlarged Pores", "Uneven Skin Tone"],
-        cautions: "Generally well-tolerated by all skin types. Avoid combining with high-concentration Vitamin C as it may cause flushing.",
-        frequency: "Ideal AM and PM use."
-    },
-    "salicylic acid": {
-        type: "Beta Hydroxy Acid (BHA)",
-        benefits: "Oil-soluble acid that penetrates deep into pores to dissolve dead skin cells, sebum, and debris. Prevents and treats blackheads and acne.",
-        bestFor: ["Acne", "Blackheads", "Oiliness", "Dullness", "Clogged Pores"],
-        cautions: "Can be drying. Start 2-3x per week. Avoid during pregnancy. Always use sunscreen.",
-        frequency: "2-3x per week to daily depending on skin tolerance."
-    },
-    "vitamin c": {
-        type: "Antioxidant / Brightener",
-        benefits: "Potent antioxidant that neutralizes free radicals, boosts collagen synthesis, fades dark spots, and provides UV damage protection when paired with SPF.",
-        bestFor: ["Dullness", "Aging", "Dark Spots", "Uneven Skin Tone", "Anti-oxidant protection"],
-        cautions: "Unstable in light and air; store in dark bottles. Can sting on sensitive or active breakout skin. Use AM before SPF.",
-        frequency: "AM daily for maximum antioxidant protection."
-    },
-    "ceramides": {
-        type: "Skin Barrier Lipid",
-        benefits: "Naturally occurring lipids that make up ~50% of the skin barrier. Prevent transepidermal water loss, lock in moisture, and protect against environmental stressors.",
-        bestFor: ["Dryness", "Damaged Barrier", "Sensitive Skin", "Eczema-prone skin"],
-        cautions: "No known side effects. Excellent for all skin types including sensitive.",
-        frequency: "AM and PM, great as a moisturizer base."
-    },
-    "retinol": {
-        type: "Retinoid / Vitamin A Derivative",
-        benefits: "Gold-standard anti-aging ingredient. Accelerates cell turnover, stimulates collagen, reduces fine lines, fades hyperpigmentation, and unclogs pores.",
-        bestFor: ["Aging", "Wrinkles", "Hyperpigmentation", "Acne", "Dullness"],
-        cautions: "Start low (0.025%) and slow (1-2x/week). Causes initial purging. NEVER use during pregnancy. Always pair with SPF.",
-        frequency: "PM only, 1-2x per week initially, building to nightly."
-    },
-    "glycerin": {
-        type: "Humectant",
-        benefits: "A gentle, classic humectant that draws water to the skin surface. Helps maintain moisture balance and supports a healthy microbiome.",
-        bestFor: ["Dryness", "Sensitive Skin", "Dehydration"],
-        cautions: "Extremely gentle; suitable for all skin types including babies.",
-        frequency: "AM and PM daily."
-    }
-};
-
-// ─── Mock Pricing Database ────────────────────────────────────────────────────
-const mockPricing = {
-    "CeraVe Hydrating Facial Cleanser": { price: 15.99, retailer: "Ulta Beauty", inStock: true, url: "ulta.com" },
-    "Paula's Choice 2% BHA Liquid Exfoliant": { price: 35.00, retailer: "Paula's Choice Official", inStock: true, url: "paulaschoice.com" },
-    "The Ordinary Niacinamide 10% + Zinc 1%": { price: 6.50, retailer: "Sephora", inStock: true, url: "sephora.com" },
-    "La Roche-Posay Toleriane Double Repair Face Moisturizer": { price: 23.99, retailer: "Target", inStock: true, url: "target.com" },
-    "TruSkin Vitamin C Serum": { price: 19.99, retailer: "Amazon", inStock: true, url: "amazon.com" },
-    "Neutrogena Hydro Boost Water Gel": { price: 22.97, retailer: "Walmart", inStock: true, url: "walmart.com" },
-    "Cetaphil Gentle Skin Cleanser": { price: 14.99, retailer: "CVS Pharmacy", inStock: true, url: "cvs.com" },
-    "Drunk Elephant C-Firma Fresh Day Serum": { price: 90.00, retailer: "Sephora", inStock: true, url: "sephora.com" }
-};
-
-// ─── Tool Functions (called by the agent loop) ────────────────────────────────
-export const toolFunctions = {
-    searchProductDatabase: (args) => {
-        const query = (args.query || "").toLowerCase();
-        const results = mockProducts.filter(p =>
-            p.name.toLowerCase().includes(query) ||
-            p.type.includes(query) ||
-            p.brand.toLowerCase().includes(query) ||
-            p.tags.some(tag => query.includes(tag) || tag.includes(query))
-        );
-
-        if (results.length === 0) {
-            return { found: false, message: "No products found matching your query in the CosmoSure database." };
+    async function callGemini(prompt) {
+        const res = await fetch(GEMINI_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: { temperature: 0.2, maxOutputTokens: 600 }
+            })
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err?.error?.message || res.statusText);
         }
-        return {
-            found: true,
-            count: results.length,
-            products: results.map(p => ({
-                name: p.name,
-                type: p.type,
-                brand: p.brand,
-                rating: p.rating,
-                keyIngredients: p.keyIngredients,
-                bestFor: p.tags.slice(0, 3)
-            }))
-        };
-    },
+        const data = await res.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "No response.";
+    }
 
-    getIngredientAnalysis: (args) => {
-        const name = (args.ingredientName || "").toLowerCase().trim();
-        for (const [key, value] of Object.entries(mockIngredients)) {
-            if (name.includes(key) || key.includes(name)) {
-                return { found: true, ingredient: key, analysis: value };
+    return {
+
+        /**
+         * Tool 1: searchWeb
+         * Gemini reasons about real skincare products matching the query,
+         * drawing on its broad knowledge of brands, formulations, and reviews.
+         */
+        searchWeb: async (args) => {
+            const query = (args.query || "").trim();
+            if (!query) return { error: "No query provided." };
+            try {
+                const prompt = `You are a skincare product expert with knowledge of real brands and products available on the market.
+
+Search query: "${query}"
+
+List 3-5 real skincare products that best match this query. For each product include:
+- Product name (exact brand + product name)
+- Brand
+- Product type (serum, cleanser, moisturizer, etc.)
+- Key ingredients
+- Why it matches the query (1 sentence)
+
+Format as a numbered list. Be factual — only name products that actually exist.`;
+                const result = await callGemini(prompt);
+                return { query, results: result };
+            } catch (err) {
+                return { error: `Search failed: ${err.message}` };
+            }
+        },
+
+        /**
+         * Tool 2: getIngredientAnalysis
+         * Gemini provides a science-backed analysis of the ingredient.
+         */
+        getIngredientAnalysis: async (args) => {
+            const ingredient = (args.ingredientName || "").trim();
+            if (!ingredient) return { error: "No ingredient name provided." };
+            try {
+                const prompt = `You are a cosmetic chemist. Provide a concise, factual analysis of "${ingredient}" as a skincare ingredient.
+
+TYPE: (humectant / exfoliant / antioxidant / retinoid / etc.)
+BENEFITS: (what it does for the skin)
+BEST FOR: (skin concerns it targets)
+HOW TO USE: (AM/PM, frequency, layering tips)
+CAUTIONS: (warnings, interactions, who should avoid it)
+
+Keep each section to 1–2 sentences. Be scientifically accurate.`;
+                const analysis = await callGemini(prompt);
+                return { ingredient, analysis };
+            } catch (err) {
+                return { error: `Ingredient analysis failed: ${err.message}` };
+            }
+        },
+
+        /**
+         * Tool 3: checkRetailPricing
+         * Gemini reasons about approximate price ranges and major retailers.
+         */
+        checkRetailPricing: async (args) => {
+            const product = (args.productName || "").trim();
+            if (!product) return { error: "No product name provided." };
+            try {
+                const prompt = `You are a skincare retail expert. For the product "${product}":
+
+PRICE RANGE: approximate retail price in USD (e.g. "$8 – $15")
+RETAILERS: 3-4 major retailers where it is typically sold (e.g. Amazon, Sephora, Target, Ulta, CVS, Walmart)
+VALUE TIER: budget / mid-range / luxury
+DISCLAIMER: one sentence noting prices may vary and users should verify current listings.
+
+Be factual based on your knowledge of this product.`;
+                const pricing = await callGemini(prompt);
+                return { product, pricing };
+            } catch (err) {
+                return { error: `Pricing lookup failed: ${err.message}` };
             }
         }
-        return {
-            found: false,
-            message: `Scientific analysis not available for "${args.ingredientName}" in our current database. Common ingredients include: Hyaluronic Acid, Niacinamide, Salicylic Acid, Vitamin C, Ceramides, Retinol, Glycerin.`
-        };
-    },
 
-    checkRetailPricing: (args) => {
-        const name = (args.productName || "");
-        for (const [key, value] of Object.entries(mockPricing)) {
-            if (name.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(name.toLowerCase())) {
-                return { found: true, product: key, pricing: value };
-            }
-        }
-        return {
-            found: false,
-            message: `Pricing data not available for "${args.productName}". Try using the exact product name as returned by searchProductDatabase.`
-        };
-    }
-};
+    };
+}

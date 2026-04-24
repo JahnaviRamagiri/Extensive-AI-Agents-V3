@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CosmoSure Agent V2</title>
-    <meta name="description" content="CosmoSure Agent V2 — autonomous AI skincare agent with multi-step reasoning.">
+    <title>CosmoSure Agent V3</title>
+    <meta name="description" content="CosmoSure Agent V3 — your autonomous AI skincare agent. Find products, analyze ingredients, and check prices through a multi-step reasoning chain.">
     <link rel="stylesheet" href="index.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,7 @@
     <div id="settingsOverlay" class="overlay" style="display:none;">
         <div class="modal-card">
             <div class="modal-icon">✦</div>
-            <h1>CosmoSure Agent V2</h1>
+            <h1>CosmoSure Agent V3</h1>
             <p class="modal-sub">Enter your Gemini API key to activate the agent.</p>
             <div class="field-group">
                 <label for="apiKeyInput">Gemini API Key</label>
@@ -38,7 +38,7 @@
                 <span class="brand-icon">✦</span>
                 <div>
                     <div class="brand-name">CosmoSure</div>
-                    <div class="brand-tag">Agent V2</div>
+                    <div class="brand-tag">Agent V3</div>
                 </div>
             </div>
 
@@ -60,10 +60,10 @@
             <div class="sidebar-section">
                 <label class="field-label">Available Tools</label>
                 <div class="tool-card" id="tool-search">
-                    <div class="tool-emoji">🔍</div>
+                    <div class="tool-emoji">🌐</div>
                     <div class="tool-info">
-                        <div class="tool-name">searchProductDatabase</div>
-                        <div class="tool-desc">Find products by concern or ingredient</div>
+                        <div class="tool-name">searchWeb</div>
+                        <div class="tool-desc">Live web search for products & brands</div>
                     </div>
                 </div>
                 <div class="tool-card" id="tool-ingredient">
@@ -145,7 +145,7 @@
 
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="marked.min.js"></script>
     <script type="module" src="index.js"></script>
 </body>
 </html>

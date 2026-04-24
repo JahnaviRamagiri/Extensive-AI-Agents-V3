@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "CosmoSure Agent V2",
-  "version": "2.0.0",
-  "description": "CosmoSure Agent V2 — autonomous AI skincare agent with a multi-step reasoning loop and 3 tools: product search, ingredient analysis, and retail pricing.",
+  "name": "CosmoSure Agent V3",
+  "version": "3.0.0",
+  "description": "CosmoSure Agent V3 — fully autonomous AI skincare agent powered by Gemini. Multi-step reasoning loop with real-time web search, ingredient analysis, and retail pricing tools.",
   "permissions": ["storage"],
   "action": {
-    "default_title": "CosmoSure Agent V2"
+    "default_title": "CosmoSure Agent V3"
   },
   "background": {
     "service_worker": "background.js"

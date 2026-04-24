@@ -112,7 +112,8 @@ function onProgress(update, chain) {
         case 'llm_thought':
             appendStep(chain, 'llm-thought',
                 `🧠 LLM Decision — Iteration ${update.iteration}`,
-                update.text
+                update.text,
+                true // showPreviewToggle
             );
             break;
 
@@ -135,8 +136,12 @@ function onProgress(update, chain) {
             const container = document.getElementById('finalResultContainer');
             const el = document.getElementById('finalResult');
             container.style.display = 'block';
-            // Strip markdown symbols — show clean plain text
-            el.textContent = stripMarkdown(update.text);
+            
+            // Render full Markdown for rich formatting (headings, bolds, etc.)
+            el.innerHTML = typeof marked !== 'undefined' 
+                ? marked.parse(update.text) 
+                : escapeHtml(update.text);
+                
             container.scrollIntoView({ behavior: 'smooth', block: 'start' });
             badge.textContent = '✓ Complete';
             badge.className = 'status-badge done';
@@ -154,19 +159,17 @@ function appendDivider(chain, iteration, prompt) {
 
     const label = document.createElement('span');
     label.textContent = `Iteration ${iteration}`;
-
     el.appendChild(label);
 
-    // "View Prompt" toggle button — shows the full text sent to the LLM
     if (prompt) {
         const btn = document.createElement('button');
-        btn.className = 'prompt-toggle-btn';
+        btn.className = 'toggle-btn';
         btn.textContent = '📋 View Prompt';
 
         const promptBox = document.createElement('div');
         promptBox.className = 'prompt-box';
         promptBox.style.display = 'none';
-        promptBox.textContent = prompt;   // raw text, no escaping needed for textContent
+        promptBox.textContent = prompt;
 
         btn.addEventListener('click', () => {
             const isOpen = promptBox.style.display !== 'none';
@@ -176,23 +179,14 @@ function appendDivider(chain, iteration, prompt) {
         });
 
         el.appendChild(btn);
-
-        // Prompt box goes right after the divider row, as a full-width sibling
-        el.insertAdjacentElement('afterend', promptBox);
-        // We need to append the promptBox AFTER el is added to chain,
-        // so use a small trick: store it on the divider and attach after appendChild
         el._promptBox = promptBox;
     }
 
     chain.appendChild(el);
-
-    // Now attach promptBox right after the divider in the chain
-    if (el._promptBox) {
-        chain.appendChild(el._promptBox);
-    }
+    if (el._promptBox) chain.appendChild(el._promptBox);
 }
 
-function appendStep(chain, type, label, body) {
+function appendStep(chain, type, label, body, showPreview = false) {
     const el = document.createElement('div');
     el.className = `step ${type}`;
 
@@ -200,8 +194,51 @@ function appendStep(chain, type, label, body) {
     if (body) {
         html += `<pre class="step-body">${escapeHtml(body)}</pre>`;
     }
+
+    if (showPreview) {
+        html += `<div class="step-controls"></div>`;
+    }
+
     el.innerHTML = html;
+
+    if (showPreview && body) {
+        const controls = el.querySelector('.step-controls');
+        const btn = document.createElement('button');
+        btn.className = 'toggle-btn';
+        btn.textContent = '✨ Clean View';
+
+        const previewBox = document.createElement('div');
+        previewBox.className = 'preview-box';
+        previewBox.style.display = 'none';
+        
+        // Try to parse JSON and get 'answer', else just clean the text
+        previewBox.textContent = getCleanPreview(body);
+
+        btn.addEventListener('click', () => {
+            const isOpen = previewBox.style.display !== 'none';
+            previewBox.style.display = isOpen ? 'none' : 'block';
+            btn.textContent = isOpen ? '✨ Clean View' : '🔼 Raw View';
+            btn.classList.toggle('active', !isOpen);
+        });
+
+        controls.appendChild(btn);
+        el.appendChild(previewBox);
+    }
+
     chain.appendChild(el);
+}
+
+function getCleanPreview(text) {
+    try {
+        // Simple attempt to find JSON in the text
+        const match = text.match(/\{[\s\S]*\}/);
+        if (match) {
+            const parsed = JSON.parse(match[0]);
+            if (parsed.answer) return stripMarkdown(parsed.answer);
+            if (parsed.tool_name) return `Action: ${parsed.tool_name}\nArgs: ${JSON.stringify(parsed.tool_arguments)}`;
+        }
+    } catch (e) {}
+    return stripMarkdown(text);
 }
 
 function activateTool(name) {
