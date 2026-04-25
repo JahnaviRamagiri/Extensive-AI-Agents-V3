@@ -2,7 +2,6 @@
 
 CosmoSure is a premium, world-class AI agent designed for the skincare connoisseur. Unlike traditional apps, CosmoSure is a **fully autonomous agentic system** that doesn't just search—it reasons. Powered by Google's `gemini-3.1-flash-lite-preview`, it executes multi-step logic to curate the perfect regimen, analyze complex chemistry, and find the best value across the global market.
 
-![CosmoSure Dashboard](cosmosure_hero_skincare_1777073416819.png)
 
 ## ✨ The Agentic Advantage
 
