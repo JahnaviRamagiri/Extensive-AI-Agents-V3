@@ -3,9 +3,21 @@
   "name": "CosmoSure Agent V3",
   "version": "3.0.0",
   "description": "CosmoSure Agent V3 — fully autonomous AI skincare agent powered by Gemini. Multi-step reasoning loop with real-time web search, ingredient analysis, and retail pricing tools.",
+  "icons": {
+    "16": "icon16.svg",
+    "32": "icon32.svg",
+    "48": "icon48.svg",
+    "128": "icon128.svg"
+  },
   "permissions": ["storage"],
   "action": {
-    "default_title": "CosmoSure Agent V3"
+    "default_title": "CosmoSure Agent V3",
+    "default_icon": {
+      "16": "icon16.svg",
+      "32": "icon32.svg",
+      "48": "icon48.svg",
+      "128": "icon128.svg"
+    }
   },
   "background": {
     "service_worker": "background.js"

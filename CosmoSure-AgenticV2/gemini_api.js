@@ -36,6 +36,7 @@ IMPORTANT RULES:
 - After receiving a tool result, either call another tool (if more info is needed) or provide your final answer.
 - Your final answer should be a comprehensive, professionally formatted report.
 - Use Markdown features: # for Main Titles, ## for Sections, **bold** for emphasis, *italics* for tips, and bullet points for lists.
+- ALWAYS include a direct clickable [Product Link](URL) for every product you recommend.
 - Ideal flow: searchWeb → getIngredientAnalysis → checkRetailPricing → final answer.`;
 
 export class AgenticGeminiAPI {

@@ -33,13 +33,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    document.getElementById('startBtn').addEventListener('click', () => {
+        const landing = document.getElementById('landingView');
+        landing.classList.add('hidden');
+        // Remove from DOM after transition
+        setTimeout(() => {
+            landing.style.display = 'none';
+        }, 800);
+        document.getElementById('appView').style.display = 'flex';
+    });
+
     document.querySelectorAll('.chip').forEach(btn => {
         btn.addEventListener('click', () => {
             document.getElementById('agentPromptInput').value = btn.dataset.query;
             runAgent();
         });
     });
+
+    startFactRotation();
 });
+
+const FACTS = [
+    "Up to 90% of visible skin aging is caused by sun exposure. Always wear your SPF!",
+    "Hyaluronic acid can hold up to 1,000 times its weight in water.",
+    "Skin cells regenerate every 28 to 30 days. Consistency is key.",
+    "Vitamin C is a powerful antioxidant that brightens skin and boosts collagen.",
+    "Retinol is the gold standard for anti-aging and skin texture renewal."
+];
+
+function startFactRotation() {
+    const el = document.getElementById('factText');
+    let idx = 0;
+    setInterval(() => {
+        idx = (idx + 1) % FACTS.length;
+        el.style.opacity = 0;
+        setTimeout(() => {
+            el.textContent = FACTS[idx];
+            el.style.opacity = 1;
+        }, 500);
+    }, 6000);
+}
 
 function saveKey() {
     const key = document.getElementById('apiKeyInput').value.trim();
@@ -64,7 +97,8 @@ async function runAgent() {
     isRunning = true;
     setBusy(true);
 
-    document.getElementById('initialState').style.display = 'none';
+    const initial = document.getElementById('initialDashboard');
+    if (initial) initial.style.display = 'none';
     document.getElementById('agentUI').style.display = 'block';
 
     const chain = document.getElementById('reasoningChain');
@@ -128,7 +162,8 @@ function onProgress(update, chain) {
         case 'tool_result':
             appendStep(chain, 'tool-result',
                 `✅ Result: ${update.name}`,
-                JSON.stringify(update.result, null, 2)
+                JSON.stringify(update.result, null, 2),
+                true // showPreviewToggle
             );
             break;
 
@@ -230,20 +265,42 @@ function appendStep(chain, type, label, body, showPreview = false) {
 
 function getCleanPreview(text) {
     try {
-        // Simple attempt to find JSON in the text
-        const match = text.match(/\{[\s\S]*\}/);
-        if (match) {
-            const parsed = JSON.parse(match[0]);
-            if (parsed.answer) return stripMarkdown(parsed.answer);
-            if (parsed.tool_name) return `Action: ${parsed.tool_name}\nArgs: ${JSON.stringify(parsed.tool_arguments)}`;
+        // 1. Try to parse as raw JSON first (common for tool results)
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            // 2. If not raw JSON, try to extract JSON from surrounding text (common for LLM thoughts)
+            const match = text.match(/\{[\s\S]*\}/);
+            if (match) data = JSON.parse(match[0]);
+        }
+
+        if (data) {
+            // If it's a tool result with an 'analysis' field
+            if (data.analysis) return stripMarkdown(data.analysis);
+            // If it's a tool result with a 'pricing' field
+            if (data.pricing) return stripMarkdown(data.pricing);
+            // If it's a search result
+            if (data.results) return stripMarkdown(data.results);
+            // If it's the final answer object
+            if (data.answer) return stripMarkdown(data.answer);
+            // If it's a tool call object
+            if (data.tool_name) return `Action: ${data.tool_name}\nArgs: ${JSON.stringify(data.tool_arguments)}`;
+            
+            // Fallback: pretty print the data keys if it's just a generic object
+            return Object.entries(data)
+                .map(([k, v]) => `${k.toUpperCase()}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
+                .join('\n');
         }
     } catch (e) {}
+    
+    // Fallback: just strip markdown from whatever text we have
     return stripMarkdown(text);
 }
 
 function activateTool(name) {
     const map = {
-        searchProductDatabase: 'tool-search',
+        searchWeb:             'tool-search',
         getIngredientAnalysis: 'tool-ingredient',
         checkRetailPricing:    'tool-price'
     };
@@ -270,7 +327,8 @@ function setBusy(busy) {
 function resetUI() {
     document.getElementById('agentPromptInput').value = '';
     document.getElementById('agentUI').style.display = 'none';
-    document.getElementById('initialState').style.display = 'flex';
+    const initial = document.getElementById('initialDashboard');
+    if (initial) initial.style.display = 'block';
     document.getElementById('reasoningChain').innerHTML = '';
     document.getElementById('finalResult').innerHTML = '';
     document.getElementById('finalResultContainer').style.display = 'none';

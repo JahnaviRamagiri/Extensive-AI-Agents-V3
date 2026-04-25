@@ -337,7 +337,86 @@ textarea:focus {
 
 .content-scroll { flex: 1; overflow-y: auto; padding: 36px; }
 
-/* ── Empty State ── */
+/* ── Landing View (Minimalist Portal) ── */
+.landing-view {
+    width: 100vw; height: 100vh;
+    background: var(--main-bg);
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; overflow: hidden;
+    position: fixed; top: 0; left: 0; z-index: 1000;
+    transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
+}
+.landing-view.hidden {
+    opacity: 0; 
+    transform: translateY(-20px); /* Minimal lift for speed */
+    visibility: hidden; 
+    pointer-events: none;
+}
+.landing-content {
+    max-width: 700px; padding: 40px; 
+    transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.landing-content > * {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: landingEntry 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.gold-line       { animation-delay: 0.2s; }
+.landing-brand   { animation-delay: 0.4s; }
+.landing-tagline { animation-delay: 0.6s; }
+.btn-start       { animation-delay: 0.8s; }
+.divider-line    { animation-delay: 1.0s; }
+.landing-footer  { animation-delay: 1.2s; }
+
+@keyframes landingEntry {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.gold-line {
+    width: 2px; height: 60px; background: var(--accent); /* Amethyst instead of Gold */
+    margin: 0 auto 30px;
+}
+.landing-brand {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 80px; font-weight: 800; color: var(--text-primary);
+    margin-bottom: 24px; letter-spacing: -3px; line-height: 1;
+}
+.landing-tagline {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 18px; color: var(--text-secondary); line-height: 1.6;
+    margin-bottom: 40px; letter-spacing: 0.5px;
+}
+.btn-start {
+    background: var(--accent); color: #fff;
+    border: none; padding: 16px 48px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px; font-weight: 600; letter-spacing: 2px;
+    cursor: pointer; transition: all 0.3s ease;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 10px 30px rgba(124,58,237,0.2);
+}
+.btn-start:hover { background: var(--accent-hover); transform: scale(1.05); }
+
+.divider-line {
+    width: 400px; height: 1px; background: var(--card-border);
+    margin: 60px auto 40px;
+}
+.did-you-know {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px; font-weight: 700; color: var(--accent-hover); /* Deeper Amethyst */
+    text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px;
+}
+.landing-footer p {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px; color: var(--text-muted); line-height: 1.6;
+    transition: opacity 0.5s ease;
+}
+
+/* ── Restored Empty State & Chips ── */
 .empty-state {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center; text-align: center;
@@ -349,23 +428,22 @@ textarea:focus {
 }
 .empty-state h2 {
     font-size: 28px; font-weight: 700;
-    color: var(--text-primary); margin-bottom: 10px; letter-spacing: -0.5px;
+    color: var(--text-primary); margin-bottom: 10px;
 }
-.empty-state > p {
-    font-size: 15px; color: var(--text-secondary);
-    max-width: 440px; line-height: 1.7; margin-bottom: 32px;
+.empty-state p {
+    font-size: 15px; color: var(--text-secondary); max-width: 440px; margin-bottom: 32px;
 }
 .chips-label {
     font-family: 'Poppins', sans-serif;
     font-size: 10px; font-weight: 600; letter-spacing: 1px;
-    text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px;
+    text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px;
 }
-.chips { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 520px; }
+.chips { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 520px; }
 .chip {
     background: var(--card-bg);
     border: 1.5px solid var(--card-border); border-radius: var(--radius-sm);
-    padding: 11px 18px;
-    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    padding: 12px 18px;
+    font-family: 'DM Sans', sans-serif; font-size: 13.5px;
     color: var(--text-secondary); cursor: pointer; text-align: left;
     transition: all 0.2s;
 }

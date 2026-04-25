@@ -112,6 +112,7 @@ Keep each section to 1–2 sentences. Be scientifically accurate.`;
 
 PRICE RANGE: approximate retail price in USD (e.g. "$8 – $15")
 RETAILERS: 3-4 major retailers where it is typically sold (e.g. Amazon, Sephora, Target, Ulta, CVS, Walmart)
+DIRECT LINK: A direct search or official brand URL for this product (e.g. https://www.amazon.com/s?k=CeraVe+Moisturizing+Cream)
 VALUE TIER: budget / mid-range / luxury
 DISCLAIMER: one sentence noting prices may vary and users should verify current listings.
 

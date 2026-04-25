@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="index.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700&family=Montserrat:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -28,12 +28,26 @@
     </div>
 
     <!-- ── App Shell ── -->
-    <div id="appContainer" class="app-shell">
+    <div id="landingView" class="landing-view">
+        <div class="landing-content">
+            <div class="gold-line"></div>
+            <h1 class="landing-brand">CosmoSure.</h1>
+            <p class="landing-tagline">The world's most intelligent skincare curator.<br>Powered by AI, tailored exclusively for your skin.</p>
+            
+            <button id="startBtn" class="btn-start">START EXPLORING</button>
+            
+            <div class="divider-line"></div>
+            
+            <div class="landing-footer">
+                <div class="did-you-know">DID YOU KNOW?</div>
+                <p id="factText">Up to 90% of visible skin aging is caused by sun exposure. Always wear your SPF!</p>
+            </div>
+        </div>
+    </div>
 
-        <!-- LEFT SIDEBAR -->
+    <div id="appView" class="app-shell" style="display:none;">
+        <!-- SIDEBAR -->
         <aside class="sidebar">
-
-            <!-- Brand -->
             <div class="sidebar-brand">
                 <span class="brand-icon">✦</span>
                 <div>
@@ -42,18 +56,14 @@
                 </div>
             </div>
 
-            <!-- Query input -->
+            <!-- Search Area -->
             <div class="sidebar-section">
-                <label class="field-label">Ask the Agent</label>
-                <textarea
-                    id="agentPromptInput"
-                    placeholder="e.g., Find me a serum for dullness, check its key ingredient, and tell me the price..."
-                    rows="6"
-                ></textarea>
-                <button id="runAgentBtn" class="btn-primary full-w mt-12">
+                <label class="field-label" for="agentPromptInput">Skincare Query</label>
+                <textarea id="agentPromptInput" placeholder="e.g. Find me a retinol for sensitive skin..."></textarea>
+                <button id="runAgentBtn" class="btn-primary mt-8 full-w">
                     <span id="btnLabel">Dispatch Agent ✦</span>
                 </button>
-                <button id="clearBtn" class="btn-ghost full-w mt-8">Clear</button>
+                <button id="clearBtn" class="btn-ghost mt-8 full-w">Clear Session</button>
             </div>
 
             <!-- Tools -->
@@ -70,14 +80,14 @@
                     <div class="tool-emoji">🧪</div>
                     <div class="tool-info">
                         <div class="tool-name">getIngredientAnalysis</div>
-                        <div class="tool-desc">Scientific breakdown of any ingredient</div>
+                        <div class="tool-desc">Science-backed ingredient analysis</div>
                     </div>
                 </div>
                 <div class="tool-card" id="tool-price">
-                    <div class="tool-emoji">💲</div>
+                    <div class="tool-emoji">🏷️</div>
                     <div class="tool-info">
                         <div class="tool-name">checkRetailPricing</div>
-                        <div class="tool-desc">Live price &amp; retailer lookup</div>
+                        <div class="tool-desc">Live price & retailer lookup</div>
                     </div>
                 </div>
             </div>
@@ -114,11 +124,25 @@
             <!-- Scrollable content -->
             <div class="content-scroll">
 
-                <!-- Empty state -->
-                <div id="initialState" class="empty-state">
+                <!-- Agent UI -->
+                <div id="agentUI" style="display:none;">
+                    <div id="reasoningChain" class="chain"></div>
+
+                    <div id="finalResultContainer" class="answer-card" style="display:none;">
+                        <div class="answer-header">
+                            <span class="answer-icon">✦</span>
+                            <span class="answer-title">Final Analysis</span>
+                        </div>
+                        <div id="finalResult" class="answer-body"></div>
+                    </div>
+                </div>
+
+                <!-- Empty state for dashboard -->
+                <div id="initialDashboard" class="empty-state">
                     <div class="empty-icon">✦</div>
-                    <h2>Autonomous Skincare Agent</h2>
-                    <p>Ask a question and watch the agent reason through it — step by step — using real tools.</p>
+                    <h2>Autonomous Agent Ready</h2>
+                    <p>Enter a query in the sidebar to begin the reasoning process.</p>
+
                     <div class="chips-label">Try asking...</div>
                     <div class="chips">
                         <button class="chip" data-query="Find me a cheap serum for dullness, analyze vitamin C, and check the price.">Vitamin C serum for dullness + price</button>
@@ -127,22 +151,8 @@
                     </div>
                 </div>
 
-                <!-- Agent output -->
-                <div id="agentUI" style="display:none;">
-                    <div id="reasoningChain" class="chain"></div>
-
-                    <div id="finalResultContainer" class="answer-card" style="display:none;">
-                        <div class="answer-header">
-                            <span class="answer-icon">✦</span>
-                            <span class="answer-title">Final Answer</span>
-                        </div>
-                        <div id="finalResult" class="answer-body markdown-body"></div>
-                    </div>
-                </div>
-
             </div>
         </main>
-
     </div>
 
     <script src="marked.min.js"></script>
